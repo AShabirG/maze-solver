@@ -3,7 +3,7 @@ from __future__ import print_function
 import operator
 import random
 import time
-
+from PIL import Image
 import pygame
 import sys
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import read_maze as rm
 from enum import Flag, auto, Enum, IntEnum
 import numpy as np
 from collections import defaultdict
-
+import matplotlib.pyplot as plt
 SCREENSIZE = W, H = 600, 600
 mazeWH = 600
 origin = ((W - mazeWH) / 2, (H - mazeWH) / 2)
@@ -76,7 +76,7 @@ class Screen:
         self.epoch = 1
         pygame.init()
 
-        self.surface = pygame.display.set_mode(SCREENSIZE)
+        #self.surface = pygame.display.set_mode(SCREENSIZE)
         self.actor = [1, 1]
         self.path = np.ones((1, 2))
         self.position_history = defaultdict(lambda: 0)
@@ -293,22 +293,33 @@ class Screen:
         self.placeCells()
         pygame.display.update()
 
+    def graphics_matplot(self):
+        horse = np.copy(self.maze) *255
+        for i in range(self.path.shape[0]):
+            horse[int(self.path[i][0])][int(self.path[i][1])] = 0.5 * 255
+        #k = Image.fromarray(horse)
+        plt.imshow(horse)
+        plt.savefig(f"epoch{self.epoch}.png")
+
     def check_terminal_state(self):
         if self.actor[0] == 199 and self.actor[1] == 199:
             print("Exit reached")
             print(f'It took {self.step_count} steps.')
             print(f'Epoch:{self.epoch}')
             print(f'Fires stepped on: {self.fires_stepped_on}')
-            self.graphics_step()
-            time.sleep(5)
+            #self.graphics_step()
+            self.graphics_matplot()
+            #time.sleep(5)
             self.reset()
         if self.step_count % 100000 == 0:
-            self.graphics_step()
+            #self.graphics_step()
+            self.graphics_matplot()
             print(f'{self.step_count} steps.')
         if self.step_count > 10000000:
-            self.graphics_step()
+            self.graphics_matplot()
+            #self.graphics_step()
             print("failed")
-            time.sleep(5)
+            #time.sleep(5)
             self.reset()# else self.reward
         # Else statement required for if taking too long and reward drops below threshold
 
