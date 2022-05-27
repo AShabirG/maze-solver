@@ -46,6 +46,7 @@ class MazeSolver:
                          Actions.DOWN: Actions.UP, Actions.STAY: Actions.STAY}
 
     def __init__(self):
+        print("Started.")
         self.step_count = 0
         # Load maze for drawing only
         self.maze = k[:, :, 0]
@@ -278,6 +279,7 @@ class MazeSolver:
             print(f'It took {self.step_count} steps.')
             print(f'Epoch:{self.epoch}')
             print(f'Fires stepped on: {self.fires_stepped_on}')
+            self.save_q_table()
             self.graphics_matplot()
             self.reset()
 
@@ -288,6 +290,9 @@ class MazeSolver:
                   "start point.")
             self.reset()
 
+    # Save q table to npy file
+    def save_q_table(self):
+        np.save(f"Epoch{self.epoch}", self.q_table)
 
 screen = MazeSolver()
 while 1:
