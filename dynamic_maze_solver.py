@@ -114,6 +114,19 @@ class MazeSolver:
         # Increment the step count
         self.step_count += 1
 
+    def load_q_table(self):
+        # Change file to evaluate
+        self.q_table = np.load("best_fire_example.npy")
+
+    def run_step_eval(self):
+        # Run if not training and just testing path
+        self.load_q_table()
+        viable, fires = self.viable_actions()
+        self.run_q_table(viable, fires)
+        self.path_record()
+        self.step_count += 1
+        self.term_state_runs()
+
     def viable_actions(self):
         """
         Function calling to get local maze information. This information is then used to determine which of the 5
@@ -218,7 +231,7 @@ class MazeSolver:
         # Assign q value to the q table using Bellmans equation
         self.q_table[old_actor[1], old_actor[0], MazeSolver.q_table_reverse_mapping[action]] += self.learning_rate * \
             (resultant_reward + self.discount_factor * max_q - self.q_table[old_actor[1], old_actor[0],
-                                                                            MazeSolver.q_table_reverse_mapping[action]])
+                                                                    MazeSolver.q_table_reverse_mapping[action]])
 
         # For the new state add a negative reward for the reverse direction of the current action to penalise going back
         self.q_table[self.actor[1], self.actor[0], MazeSolver.q_table_reverse_mapping[
@@ -226,6 +239,59 @@ class MazeSolver:
 
         # Total reward thus far
         self.total_reward += resultant_reward
+
+    def run_q_table(self, viable_actions, fires):
+
+        # Select a random action if below assigned exploration value
+        if random.random() < self.epsilon:
+            action = viable_actions[random.randint(0, len(viable_actions) - 1)]
+
+        # Otherwise, Select the action with the highest q value
+        else:
+            # Load all q values of the 5 moves in the current state into a list 'options'
+            options = self.q_table[self.actor[1], self.actor[0], :]
+
+            # Remove the q values that correspond to a move which will lead into a illegal position as determined by
+            # viable actions
+            viable_options = {MazeSolver.q_table_action_mapping[idx]: val for idx, val in enumerate(options) if
+                              MazeSolver.q_table_action_mapping[idx] in viable_actions}
+
+            # Choose the action which has the best q value of the remaining legal actions
+            action = max(viable_options.items(), key=operator.itemgetter(1))[0]
+
+
+        # Check if action results in standing on a fire
+        self.is_onfire = action in fires
+        if self.is_onfire:
+            self.fires_stepped_on += 1
+
+        # Apply action
+        if action == Actions.UP:
+            self.up()
+        elif action == Actions.LEFT:
+            self.left()
+        elif action == Actions.DOWN:
+            self.down()
+        elif action == Actions.RIGHT:
+            self.right()
+        elif action == Actions.STAY:
+            self.stay()
+        else:
+            print("Invalid action attempted.")
+
+        # If the resultant state has not been seen before add it to the path
+        if (self.actor[0] + 200 * self.actor[1]) not in self.position_history:
+            add_to_path = np.empty((1, 2))
+            add_to_path[0][0] = self.actor[1]
+            add_to_path[0][1] = self.actor[0]
+            self.path = np.append(self.path, add_to_path, axis=0)
+
+        # Inform user if a fire was stepped on
+        if self.is_onfire:
+            print(f"Stepped on fire on step {self.step_count}")
+
+        # Add to position history
+        self.position_history[self.position_index_1D()] += 1
 
     def position_index_1D(self):
         # Convert position history to 1 dimension to save memory and ensure they don't overlap using multiplier.
@@ -294,25 +360,49 @@ class MazeSolver:
         elif self.step_count % 10000 == 0:
             print(f'{self.step_count} steps.')
             print(f'Fires stepped on: {self.fires_stepped_on}')
-            self.save_q_table()
             self.step_count_per_epoch.append(self.step_count)
             self.graphics_matplot()
 
         # Limit steps per epoch before restart
         if self.step_count > 5000000:
             self.graphics_matplot()
+            self.save_q_table()
             print("Exceeded maximum step count of 10,000,000 for a single epoch; actor position has been reset to "
                   "start point.")
             self.reset()
+
+    def term_state_runs(self):
+        if self.actor[0] == 199 and self.actor[1] == 199:
+            print("Exit reached")
+            print(f'It took {self.step_count} steps.')
+            self.graphics_matplot()
+            global go
+            go = False
+            text.close()
 
     # Save q table to npy file
     def save_q_table(self):
         np.save(f"Epoch{self.epoch}", self.q_table)
 
+    # Document actions
+    def path_record(self):
+        # Save to file the actions
+        text.write(
+            f"Epoch: {self.epoch}, Step count: {self.step_count}, location of actor: ({self.actor[1]}, {self.actor[0]}) \n")
+
 
 go = True
 screen = MazeSolver()
-
+mode = "eval"
+text = open(r'path_record.txt', 'w')
 while go:
     # User must stop as it will keep going and slightly improve over time. Reducing number of steps.
-    screen.step()
+    if mode == "train":
+        screen.step()
+
+    elif mode == 'eval':
+        screen.run_step_eval()
+
+    else:
+        print("Incorrect mode, please choose train or eval.")
+        go = False
