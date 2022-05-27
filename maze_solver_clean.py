@@ -74,8 +74,7 @@ class MazeSolver:
         self.fires_stepped_on = 0
         # Initiate Epoch value
         self.epoch = 1
-
-
+        self.step_count_per_epoch = []
         # Initialise actor position
         self.actor = [1, 1]
         # Start path
@@ -95,6 +94,13 @@ class MazeSolver:
         self.step_count = 0
         self.position_history = defaultdict(lambda: 0)
         self.epoch += 1
+        # End if too many epochs have elapsed and return best q table epoch.
+        global go
+        if self.epoch >= 61:
+            go = False
+            best_run = min(self.step_count_per_epoch)
+            index_of_best = self.step_count_per_epoch.index(best_run)
+            print(f"Best q table was produced in epoch {index_of_best + 1}")
 
     def step(self):
         """Run the pygame environment for displaying the maze structure and visible (local) environment of actor
@@ -280,6 +286,7 @@ class MazeSolver:
             print(f'Epoch:{self.epoch}')
             print(f'Fires stepped on: {self.fires_stepped_on}')
             self.save_q_table()
+            self.step_count_per_epoch.append(self.step_count)
             self.graphics_matplot()
             self.reset()
 
@@ -294,7 +301,10 @@ class MazeSolver:
     def save_q_table(self):
         np.save(f"Epoch{self.epoch}", self.q_table)
 
+
+go = True
 screen = MazeSolver()
-while 1:
+
+while go:
     # User must stop as it will keep going and slightly improve over time. Reducing number of steps.
     screen.step()
