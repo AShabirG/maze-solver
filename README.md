@@ -1,7 +1,10 @@
 # maze-solver
 Solving a dynamic maze using reinforcement learning
-Maze_solver solves static maze.
-dynamic_maze_solver is the final version of the dynamic maze solver. Remainder are older versions.
-Maze_solver_fire is an attempt at self-supervised learning but it did not do as well as dynamic_maze_solver nor did I see it solve
+Maze_solver file in old_code folder solve the static maze problem.
+dynamic_maze_solver is the final version of the dynamic maze solver, can be found in the dynamic_maze file.
+Remainder of files in old_code folder are older versions and other attempts.
+Maze_solver_fire is an attempt at self-supervised learning but it did not do as well as dynamic_maze_solver nor did I see it solve.
+
+Below is an image of the solution of the dynamic mazes optimal path. 
 
 ![Optimal path](https://github.com/AShabirG/maze-solver/blob/main/epoch16_fire_4672steps.png)
